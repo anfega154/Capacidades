@@ -25,4 +25,14 @@ public class Handler extends BaseHandler {
                 .flatMap(response -> created("Capacidad creada con exito", response));
     }
 
+    public Mono<ServerResponse> listenListAbilities(ServerRequest request) {
+        int page = Integer.parseInt(request.queryParam("page").orElse("0"));
+        int size = Integer.parseInt(request.queryParam("size").orElse("10"));
+        String sortBy = request.queryParam("sortBy").orElse("name");
+        String direction = request.queryParam("direction").orElse("asc");
+
+        return abilityService.listAbilities(page, size, sortBy, direction)
+                .flatMap(abilities -> ok(abilities.isEmpty() ? "No se encontraron capacidades" : "Capacidades encontradas", abilities));
+    }
+
 }
