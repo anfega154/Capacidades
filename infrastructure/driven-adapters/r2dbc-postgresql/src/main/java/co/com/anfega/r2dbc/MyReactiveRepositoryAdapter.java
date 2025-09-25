@@ -53,7 +53,7 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
                         savedData.getDescription(),
                         savedData.getTechnologies() != null && !savedData.getTechnologies().isEmpty()
                                 ? Arrays.stream(savedData.getTechnologies().split(","))
-                                .map(name -> new Technology(null, name, null))
+                                .map(name -> new Technology( name, null))
                                 .collect(Collectors.toList())
                                 : new ArrayList<>()
                 ));
