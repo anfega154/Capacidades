@@ -21,11 +21,7 @@ public class AbilityUseCase implements AbilityInputPort {
 
     @Override
     public Mono<Ability> save(Ability ability) {
-        return validateAbility(ability)
-                .then(abilityRepository.save(ability));
-    }
 
-    private Mono<Void> validateAbility(Ability ability) {
         List<Technology> technologies = ability.getTechnologies();
 
         if (technologies == null || technologies.size() < 3) {
@@ -36,15 +32,14 @@ public class AbilityUseCase implements AbilityInputPort {
             return Mono.error(new IllegalArgumentException("La capacidad no puede tener más de 20 tecnologías."));
         }
 
-
         Set<String> names = new HashSet<>();
         for (Technology t : technologies) {
             if (!names.add(t.getName().toLowerCase())) {
                 return Mono.error(new IllegalArgumentException("No se permiten tecnologías repetidas."));
             }
         }
-
-        return Mono.empty();
+        return abilityRepository.save(ability);
     }
+
 }
 

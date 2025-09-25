@@ -4,7 +4,6 @@ import co.com.anfega.api.dto.CreateAbilityDTO;
 import co.com.anfega.api.helper.api.BaseHandler;
 import co.com.anfega.api.mapper.AbilityDTOMapper;
 import co.com.anfega.api.serice.AbilityService;
-import co.com.anfega.model.ability.Ability;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
