@@ -20,16 +20,6 @@ public class AbilityService {
     private final AbilityInputPort abilityInputPort;
     private final WebClientHelper webClientHelper;
 
-    private Flux<Technology> getTechnologies() {
-        return webClientHelper.get(
-                        "http://tecnologia-app:8081/api/v1/tecnologias",
-                        null,
-                        new ParameterizedTypeReference<ApiResponse<Technology>>() {
-                        })
-                .map(ApiResponse::getContent)
-                .flatMapMany(Flux::fromIterable);
-    }
-
     public Mono<Ability> save(Ability ability) {
         return getTechnologies()
                 .collectList()
@@ -46,4 +36,21 @@ public class AbilityService {
                     return abilityInputPort.save(ability);
                 });
     }
+
+    public Mono<List<Ability>> listAbilities(int page, int size, String sortBy, String direction) {
+        return abilityInputPort.listAbilities(page, size, sortBy, direction)
+                .map(pageResponse -> pageResponse.getContent().isEmpty() ? List.of() : pageResponse.getContent());
+    }
+
+    private Flux<Technology> getTechnologies() {
+        return webClientHelper.get(
+                        "http://tecnologia-app:8081/api/v1/tecnologias",
+                        null,
+                        new ParameterizedTypeReference<ApiResponse<Technology>>() {
+                        })
+                .map(ApiResponse::getContent)
+                .flatMapMany(Flux::fromIterable);
+    }
+
+
 }

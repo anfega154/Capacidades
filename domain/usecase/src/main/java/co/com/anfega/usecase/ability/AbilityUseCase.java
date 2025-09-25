@@ -4,6 +4,7 @@ package co.com.anfega.usecase.ability;
 import co.com.anfega.model.ability.Ability;
 import co.com.anfega.model.ability.gateways.AbilityInputPort;
 import co.com.anfega.model.ability.gateways.AbilityRepository;
+import co.com.anfega.model.common.PageResponse;
 import co.com.anfega.model.technology.Technology;
 import reactor.core.publisher.Mono;
 
@@ -39,6 +40,12 @@ public class AbilityUseCase implements AbilityInputPort {
             }
         }
         return abilityRepository.save(ability);
+    }
+
+    @Override
+    public Mono<PageResponse<Ability>> listAbilities(int page, int size, String sortBy, String direction) {
+        return abilityRepository.findAllPaginated(page, size, sortBy, direction)
+                .switchIfEmpty(Mono.just(new PageResponse<>(List.of(), page, size, 0)));
     }
 
 }
