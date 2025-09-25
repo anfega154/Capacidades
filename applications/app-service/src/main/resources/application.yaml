@@ -1,5 +1,5 @@
 server:
-  port: 8088
+  port: 8082
 spring:
   application:
     name: "Capacidades"
@@ -26,19 +26,19 @@ routers:
   paths:
     abilities: "/api/v1/capacidades"
 
-#adapters:
-#  r2dbc:
-#    host: "${SPRING_R2DBC_HOST:capacidades-db}"
-#    port: "${SPRING_R2DBC_PORT:5432}"
-#    database: "${SPRING_R2DBC_DATABASE:capacidades}"
-#    schema: "${SPRING_R2DBC_SCHEMA:public}"
-#    username: "${SPRING_R2DBC_USERNAME:postgres}"
-#    password: "${SPRING_R2DBC_PASSWORD:postgres}"
 adapters:
   r2dbc:
-    host: "localhost"
-    port: "5433"
-    database: "capacidades"
-    schema: "public"
-    username: "postgres"
-    password: "postgres"
+    host: "${SPRING_R2DBC_HOST:capacidades-db}"
+    port: "${SPRING_R2DBC_PORT:5432}"
+    database: "${SPRING_R2DBC_DATABASE:capacidades}"
+    schema: "${SPRING_R2DBC_SCHEMA:public}"
+    username: "${SPRING_R2DBC_USERNAME:postgres}"
+    password: "${SPRING_R2DBC_PASSWORD:postgres}"
+#adapters:
+#  r2dbc:
+#    host: "localhost"
+#    port: "5433"
+#    database: "capacidades"
+#    schema: "public"
+#    username: "postgres"
+#    password: "postgres"

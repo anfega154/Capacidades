@@ -2,6 +2,7 @@ package co.com.anfega.usecase.ability;
 
 import co.com.anfega.model.ability.Ability;
 import co.com.anfega.model.ability.gateways.AbilityRepository;
+import co.com.anfega.model.common.PageResponse;
 import co.com.anfega.model.technology.Technology;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -91,7 +92,7 @@ class AbilityUseCaseTest {
         Ability ability = buildAbilityWithTechnologies(List.of(
                 new Technology("Java", "1.8"),
                 new Technology("Spring", "5.0"),
-                new Technology("java","")
+                new Technology("java", "")
         ));
 
         Mono<Ability> result = abilityUseCase.save(ability);
@@ -102,6 +103,42 @@ class AbilityUseCaseTest {
                 .verify();
 
         verify(abilityRepository, never()).save(any());
+    }
+
+    @Test
+    void listAbilities_shouldReturnPage_whenRepositoryReturnsData() {
+        Ability ability = buildAbilityWithTechnologies(List.of(
+                new Technology("Java", "1.8"),
+                new Technology("Spring", "5.0"),
+                new Technology("Docker", "19.03")
+        ));
+        PageResponse<Ability> response = new PageResponse<>(List.of(ability), 0, 10, 1);
+
+        when(abilityRepository.findAllPaginated(0, 10, "name", "asc"))
+                .thenReturn(Mono.just(response));
+
+        Mono<PageResponse<Ability>> result = abilityUseCase.listAbilities(0, 10, "name", "asc");
+
+        StepVerifier.create(result)
+                .expectNext(response)
+                .verifyComplete();
+    }
+
+    @Test
+    void listAbilities_shouldReturnEmptyPage_whenRepositoryReturnsEmpty() {
+        when(abilityRepository.findAllPaginated(0, 10, "name", "asc"))
+                .thenReturn(Mono.empty());
+
+        Mono<PageResponse<Ability>> result = abilityUseCase.listAbilities(0, 10, "name", "asc");
+
+        StepVerifier.create(result)
+                .assertNext(page -> {
+                    assert page.getContent().isEmpty();
+                    assert page.getTotalElements() == 0;
+                    assert page.getPage() == 0;
+                    assert page.getSize() == 10;
+                })
+                .verifyComplete();
     }
 }
 
