@@ -1,5 +1,6 @@
 server:
   port: 8082
+
 spring:
   application:
     name: "Capacidades"
@@ -11,6 +12,7 @@ spring:
       path: "/h2"
   profiles:
     include: null
+
 management:
   endpoints:
     web:
@@ -20,11 +22,24 @@ management:
     health:
       probes:
         enabled: true
+
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8082"
+
 routers:
   paths:
     abilities: "/api/v1/capacidades"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      externalServiceCB:
+        register-health-indicator: true
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
 
 adapters:
   r2dbc:
@@ -34,11 +49,13 @@ adapters:
     schema: "${SPRING_R2DBC_SCHEMA:public}"
     username: "${SPRING_R2DBC_USERNAME:postgres}"
     password: "${SPRING_R2DBC_PASSWORD:postgres}"
-#adapters:
-#  r2dbc:
-#    host: "localhost"
-#    port: "5433"
-#    database: "capacidades"
-#    schema: "public"
-#    username: "postgres"
-#    password: "postgres"
+
+# Config alternativo local
+# adapters:
+#   r2dbc:
+#     host: "localhost"
+#     port: "5433"
+#     database: "capacidades"
+#     schema: "public"
+#     username: "postgres"
+#     password: "postgres"

@@ -10,6 +10,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.util.List;
 
@@ -42,6 +43,7 @@ public class AbilityService {
                 .map(pageResponse -> pageResponse.getContent().isEmpty() ? List.of() : pageResponse.getContent());
     }
 
+    @CircuitBreaker(name = "externalServiceCB", fallbackMethod = "fallbackGetData")
     private Flux<Technology> getTechnologies() {
         return webClientHelper.get(
                         "http://tecnologia-app:8081/api/v1/tecnologias",
@@ -52,5 +54,8 @@ public class AbilityService {
                 .flatMapMany(Flux::fromIterable);
     }
 
+    private Mono<String> fallbackGetData(Throwable ex) {
+        return Mono.just("⚠ Servicio no disponible, intente más tarde ⚠");
+    }
 
 }

@@ -9,4 +9,6 @@ dependencies {
     implementation "org.springdoc:springdoc-openapi-starter-common:2.6.0"
     annotationProcessor "org.mapstruct:mapstruct-processor:$mapstructVersion"
     implementation "jakarta.validation:jakarta.validation-api:$jakartaValidationVersion"
+    implementation "io.github.resilience4j:resilience4j-spring-boot3:2.2.0"
+    implementation "io.github.resilience4j:resilience4j-reactor:2.2.0"
 }
