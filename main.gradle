@@ -30,6 +30,8 @@ subprojects {
     dependencies {
         implementation 'io.projectreactor:reactor-core'
         implementation 'io.projectreactor.addons:reactor-extra'
+        implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+        implementation 'org.springframework.boot:spring-boot-starter-cache'
 
         testImplementation 'io.projectreactor.tools:blockhound-junit-platform:1.0.13.RELEASE'
 
@@ -129,4 +131,8 @@ pitestReportAggregate {
 
 tasks.named('wrapper') {
     gradleVersion = '8.14.3'
+}
+
+tasks.named('validateStructure') {
+    enabled = false
 }

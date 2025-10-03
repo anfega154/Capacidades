@@ -1,5 +1,5 @@
 server:
-  port: 8082
+  port: 8089
 
 spring:
   application:
@@ -13,13 +13,24 @@ spring:
   profiles:
     include: null
 
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 10m # Duración de la caché en Redis (10 minutos)
+
 management:
   endpoints:
     web:
       exposure:
-        include: "health,prometheus"
+        include: "health,info,prometheus,circuitbreakers"
   endpoint:
     health:
+      show-details: "always"
       probes:
         enabled: true
 
@@ -34,28 +45,29 @@ resilience4j:
   circuitbreaker:
     instances:
       externalServiceCB:
+        event-consumer-buffer-size: 10
+        minimum-number-of-calls: 3
         register-health-indicator: true
         sliding-window-size: 10
         failure-rate-threshold: 50
-        wait-duration-in-open-state: 10s
+        wait-duration-in-open-state: 5s
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
-
-adapters:
-  r2dbc:
-    host: "${SPRING_R2DBC_HOST:capacidades-db}"
-    port: "${SPRING_R2DBC_PORT:5432}"
-    database: "${SPRING_R2DBC_DATABASE:capacidades}"
-    schema: "${SPRING_R2DBC_SCHEMA:public}"
-    username: "${SPRING_R2DBC_USERNAME:postgres}"
-    password: "${SPRING_R2DBC_PASSWORD:postgres}"
+#adapters:
+#  r2dbc:
+#    host: "${SPRING_R2DBC_HOST:capacidades-db}"
+#    port: "${SPRING_R2DBC_PORT:5432}"
+#    database: "${SPRING_R2DBC_DATABASE:capacidades}"
+#    schema: "${SPRING_R2DBC_SCHEMA:public}"
+#    username: "${SPRING_R2DBC_USERNAME:postgres}"
+#    password: "${SPRING_R2DBC_PASSWORD:postgres}"
 
 # Config alternativo local
-# adapters:
-#   r2dbc:
-#     host: "localhost"
-#     port: "5433"
-#     database: "capacidades"
-#     schema: "public"
-#     username: "postgres"
-#     password: "postgres"
+adapters:
+  r2dbc:
+    host: "localhost"
+    port: "5433"
+    database: "capacidades"
+    schema: "public"
+    username: "postgres"
+    password: "postgres"
