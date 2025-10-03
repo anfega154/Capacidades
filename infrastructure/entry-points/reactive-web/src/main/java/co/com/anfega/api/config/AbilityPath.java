@@ -9,4 +9,5 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "routers.paths")
 public class AbilityPath {
     private String abilities;
+    private String allAbilities;
 }

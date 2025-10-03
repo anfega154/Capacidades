@@ -1,6 +1,7 @@
 package co.com.anfega.api;
 
 import co.com.anfega.api.dto.CreateAbilityDTO;
+import co.com.anfega.api.dto.FindByNamesDTO;
 import co.com.anfega.api.helper.api.BaseHandler;
 import co.com.anfega.api.mapper.AbilityDTOMapper;
 import co.com.anfega.api.service.AbilityService;
@@ -25,6 +26,9 @@ public class Handler extends BaseHandler {
     private final AbilityDTOMapper abilityDTOMapper;
     private final Validator validator;
 
+    public static final String EMPTY_ABILITIES = "No se encontraron capacidades";
+    public static final String ABILITIES_FOUND = "Capacidades encontradas";
+
     public Mono<ServerResponse> listenSaveAbility(ServerRequest request) {
         return bodyToMonoValidated(validator, request, CreateAbilityDTO.class)
                 .map(abilityDTOMapper::toModel)
@@ -41,7 +45,14 @@ public class Handler extends BaseHandler {
         String direction = request.queryParam("direction").orElse("asc");
 
         return abilityService.listAbilities(page, size, sortBy, direction)
-                .flatMap(abilities -> ok(abilities.isEmpty() ? "No se encontraron capacidades" : "Capacidades encontradas", abilities));
+                .flatMap(abilities -> ok(abilities.isEmpty() ? EMPTY_ABILITIES : ABILITIES_FOUND, abilities));
+    }
+
+    public Mono<ServerResponse> listenAllAbilities(ServerRequest request) {
+        return bodyToMonoValidated(validator, request, FindByNamesDTO.class)
+                .map(FindByNamesDTO::getNames)
+                .flatMap(abilityService::findByNames)
+                .flatMap(abilities -> ok(abilities.isEmpty() ? EMPTY_ABILITIES : ABILITIES_FOUND, abilities));
     }
 
     public Mono<List<Technology>> fallbackGetData(Throwable ex) {

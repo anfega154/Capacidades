@@ -4,7 +4,6 @@ import co.com.anfega.api.helper.client.ApiResponse;
 import co.com.anfega.api.helper.client.WebClientHelper;
 import co.com.anfega.model.ability.Ability;
 import co.com.anfega.model.ability.gateways.AbilityInputPort;
-import co.com.anfega.model.common.PageResponse;
 import co.com.anfega.model.technology.Technology;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,27 +50,32 @@ public class AbilityService {
         return Mono.zip(
                 abilityInputPort.listAbilities(page, size, sortBy, direction),
                 getTechnologies()
-        ).map(tuple -> {
-            PageResponse<Ability> pageResponse = tuple.getT1();
-            List<Technology> technologies = tuple.getT2();
+        ).map(tuple -> enrichAbilities(tuple.getT1().getContent(), tuple.getT2()));
+    }
 
-            pageResponse.getContent().forEach(ability -> {
-                List<Technology> enriched = ability.getTechnologies().stream()
-                        .map(tech -> technologies.stream()
-                                .filter(t -> t.getName().equalsIgnoreCase(tech.getName()))
-                                .findFirst()
-                                .map(match -> {
-                                    tech.setId(match.getId());
-                                    tech.setDescription(match.getDescription());
-                                    return tech;
-                                })
-                                .orElse(tech))
-                        .toList();
-                ability.setTechnologies(enriched);
-            });
+    public Mono<List<Ability>> findByNames(List<String> names) {
+        return abilityInputPort.findByNames(names)
+                .collectList()
+                .zipWith(getTechnologies())
+                .map(tuple -> enrichAbilities(tuple.getT1(), tuple.getT2()));
+    }
 
-            return pageResponse.getContent();
+    private List<Ability> enrichAbilities(List<Ability> abilities, List<Technology> technologies) {
+        abilities.forEach(ability -> {
+            List<Technology> enriched = ability.getTechnologies().stream()
+                    .map(tech -> technologies.stream()
+                            .filter(t -> t.getName().equalsIgnoreCase(tech.getName()))
+                            .findFirst()
+                            .map(match -> {
+                                tech.setId(match.getId());
+                                tech.setDescription(match.getDescription());
+                                return tech;
+                            })
+                            .orElse(tech))
+                    .toList();
+            ability.setTechnologies(enriched);
         });
+        return abilities;
     }
 
     @Cacheable(value = "technologiesCache", unless = "#result == null")

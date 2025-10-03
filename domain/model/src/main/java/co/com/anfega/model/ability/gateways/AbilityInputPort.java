@@ -1,8 +1,11 @@
 package co.com.anfega.model.ability.gateways;
 
 import co.com.anfega.model.ability.Ability;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import co.com.anfega.model.common.PageResponse;
+
+import java.util.List;
 
 public interface AbilityInputPort {
     Mono<Ability> save(Ability ability);
@@ -12,4 +15,5 @@ public interface AbilityInputPort {
             String sortBy,
             String direction
     );
+    Flux<Ability> findByNames(List<String> names);
 }

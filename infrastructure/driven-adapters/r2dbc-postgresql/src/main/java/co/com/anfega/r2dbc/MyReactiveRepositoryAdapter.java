@@ -9,6 +9,7 @@ import co.com.anfega.r2dbc.entity.AbilityEntity;
 import co.com.anfega.r2dbc.helper.ReactiveAdapterOperations;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -68,6 +69,14 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
                 .map(this::toAbility)
                 .collectList()
                 .map(list -> paginateAndSortAbilities(list, page, size, sortBy, direction));
+    }
+
+    @Override
+    public Flux<Ability> findByNames(List<String> names) {
+        return repository.findByNameIn(names)
+                .map(this::toAbility)
+                .switchIfEmpty(Flux.empty())
+                .onErrorResume(e -> Flux.empty());
     }
 
     private Ability toAbility(AbilityEntity entity) {

@@ -40,6 +40,7 @@ cors:
 routers:
   paths:
     abilities: "/api/v1/capacidades"
+    allAbilities: "/api/v1/capacidades/all"
 
 resilience4j:
   circuitbreaker:

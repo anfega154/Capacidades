@@ -20,6 +20,7 @@ public class RouterRest {
     @Bean
     public RouterFunction<ServerResponse> routerFunction(Handler handler) {
         return route(POST(abilityPath.getAbilities()), handler::listenSaveAbility)
-                .andRoute(GET(abilityPath.getAbilities()), handler::listenListAbilities);
+                .andRoute(GET(abilityPath.getAbilities()), handler::listenListAbilities)
+                .andRoute(POST(abilityPath.getAllAbilities()), handler::listenAllAbilities);
     }
 }
