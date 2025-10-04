@@ -7,6 +7,7 @@ import co.com.anfega.model.common.PaginationHelper;
 import co.com.anfega.model.technology.Technology;
 import co.com.anfega.r2dbc.entity.AbilityEntity;
 import co.com.anfega.r2dbc.helper.ReactiveAdapterOperations;
+import lombok.extern.slf4j.Slf4j;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
+@Slf4j
 public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         Ability,
         AbilityEntity,
