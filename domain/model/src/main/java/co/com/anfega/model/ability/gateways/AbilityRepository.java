@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface AbilityRepository {
     Mono<Ability> save(Ability ability);
-    Mono<PageResponse<Ability>> findAllPaginated(int page, int size, String sortBy, String direction);
+    Mono<PageResponse<Ability>> findAllPaginated(int page, int size, String sortBy, String direction, int totalElements);
     Flux<Ability> findByNames(List<String> names);
+    Mono<Void> deleteByIds(List<Long> ids);
 }

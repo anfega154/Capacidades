@@ -66,11 +66,11 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     }
 
     @Override
-    public Mono<PageResponse<Ability>> findAllPaginated(int page, int size, String sortBy, String direction) {
+    public Mono<PageResponse<Ability>> findAllPaginated(int page, int size, String sortBy, String direction, int totalElements) {
         return repository.findAll()
                 .map(this::toAbility)
                 .collectList()
-                .map(list -> paginateAndSortAbilities(list, page, size, sortBy, direction));
+                .map(list -> paginateAndSortAbilities(list, page, size, sortBy, direction, totalElements));
     }
 
     @Override
@@ -91,11 +91,14 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     }
 
     private PageResponse<Ability> paginateAndSortAbilities(
-            java.util.List<Ability> list, int page, int size, String sortBy, String direction) {
-        final String TECHNOLOGIES_COUNT = "technologiesCount";
+            List<Ability> list, int page, int size, String sortBy, String direction, int totalElements) {
+        if ("technologiesCount".equalsIgnoreCase(sortBy)) {
+            list = list.stream()
+                    .filter(a -> a.getTechnologies().size() == totalElements)
+                    .collect(Collectors.toCollection(ArrayList::new));
+            return PaginationHelper.paginateAndSort(list, page, size, direction, a -> a.getTechnologies().size());
+        }
         switch (sortBy == null ? "" : sortBy.toLowerCase()) {
-            case TECHNOLOGIES_COUNT:
-                return PaginationHelper.paginateAndSort(list, page, size, direction, a -> a.getTechnologies().size());
             case "name":
                 return PaginationHelper.paginateAndSort(list, page, size, direction, Ability::getName);
             case "description":
@@ -105,5 +108,10 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         }
     }
 
+    @Override
+    public Mono<Void> deleteByIds(List<Long> ids) {
+        return repository.deleteAllById(ids)
+                .onErrorResume(e -> Mono.error(new IllegalStateException("Error eliminando capacidades: " + e.getMessage())));
 
+    }
 }

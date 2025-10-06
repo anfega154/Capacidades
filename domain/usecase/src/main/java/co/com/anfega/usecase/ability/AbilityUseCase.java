@@ -44,8 +44,8 @@ public class AbilityUseCase implements AbilityInputPort {
     }
 
     @Override
-    public Mono<PageResponse<Ability>> listAbilities(int page, int size, String sortBy, String direction) {
-        return abilityRepository.findAllPaginated(page, size, sortBy, direction)
+    public Mono<PageResponse<Ability>> listAbilities(int page, int size, String sortBy, String direction, int totalElements) {
+        return abilityRepository.findAllPaginated(page, size, sortBy, direction, totalElements)
                 .switchIfEmpty(Mono.just(new PageResponse<>(List.of(), page, size, 0)));
     }
 
@@ -53,6 +53,11 @@ public class AbilityUseCase implements AbilityInputPort {
     public Flux<Ability> findByNames(List<String> names) {
         return abilityRepository.findByNames(names)
                 .switchIfEmpty(Flux.error(new IllegalStateException("No hay capacidades registradas")));
+    }
+
+    @Override
+    public Mono<Void> deleteByIds(List<Long> ids) {
+        return abilityRepository.deleteByIds(ids);
     }
 
 }

@@ -1,6 +1,7 @@
 package co.com.anfega.api;
 
 import co.com.anfega.api.dto.CreateAbilityDTO;
+import co.com.anfega.api.dto.DeleteAbilitiesDTO;
 import co.com.anfega.api.dto.FindByNamesDTO;
 import co.com.anfega.api.helper.api.BaseHandler;
 import co.com.anfega.api.mapper.AbilityDTOMapper;
@@ -41,10 +42,11 @@ public class Handler extends BaseHandler {
     public Mono<ServerResponse> listenListAbilities(ServerRequest request) {
         int page = Integer.parseInt(request.queryParam("page").orElse("0"));
         int size = Integer.parseInt(request.queryParam("size").orElse("10"));
+        int totalElements = Integer.parseInt(request.queryParam("totalElements").orElse("0"));
         String sortBy = request.queryParam("sortBy").orElse("name");
         String direction = request.queryParam("direction").orElse("asc");
 
-        return abilityService.listAbilities(page, size, sortBy, direction)
+        return abilityService.listAbilities(page, size, sortBy, direction, totalElements)
                 .flatMap(abilities -> ok(abilities.isEmpty() ? EMPTY_ABILITIES : ABILITIES_FOUND, abilities));
     }
 
@@ -53,6 +55,13 @@ public class Handler extends BaseHandler {
                 .map(FindByNamesDTO::getNames)
                 .flatMap(abilityService::findByNames)
                 .flatMap(abilities -> ok(abilities.isEmpty() ? EMPTY_ABILITIES : ABILITIES_FOUND, abilities));
+    }
+
+    public Mono<ServerResponse> listenDeleteAbilitiesByIds(ServerRequest request) {
+        return bodyToMonoValidated(validator, request, DeleteAbilitiesDTO.class)
+                .map(DeleteAbilitiesDTO::getIds)
+                .flatMap(ids -> abilityService.deleteByIds(ids)
+                        .then(ok("Tecnologias eliminadas con exito")));
     }
 
     public Mono<List<Technology>> fallbackGetData(Throwable ex) {

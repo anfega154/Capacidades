@@ -7,7 +7,6 @@ import co.com.anfega.model.ability.gateways.AbilityInputPort;
 import co.com.anfega.model.technology.Technology;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -46,9 +45,9 @@ public class AbilityService {
                 });
     }
 
-    public Mono<List<Ability>> listAbilities(int page, int size, String sortBy, String direction) {
+    public Mono<List<Ability>> listAbilities(int page, int size, String sortBy, String direction, int totalElements) {
         return Mono.zip(
-                abilityInputPort.listAbilities(page, size, sortBy, direction),
+                abilityInputPort.listAbilities(page, size, sortBy, direction, totalElements),
                 getTechnologies()
         ).map(tuple -> enrichAbilities(tuple.getT1().getContent(), tuple.getT2()));
     }
@@ -78,8 +77,11 @@ public class AbilityService {
         return abilities;
     }
 
-    @Cacheable(value = "technologiesCache", unless = "#result == null")
-    public Mono<List<Technology>> getTechnologies() {
+    public Mono<Void> deleteByIds(List<Long> ids) {
+        return abilityInputPort.deleteByIds(ids);
+    }
+
+    private Mono<List<Technology>> getTechnologies() {
         return webClientHelper.get(
                         "http://localhost:8088/api/v1/tecnologias",
                         null,
