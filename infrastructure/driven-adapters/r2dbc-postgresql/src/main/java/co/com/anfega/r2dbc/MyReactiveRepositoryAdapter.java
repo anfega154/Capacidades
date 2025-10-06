@@ -7,8 +7,10 @@ import co.com.anfega.model.common.PaginationHelper;
 import co.com.anfega.model.technology.Technology;
 import co.com.anfega.r2dbc.entity.AbilityEntity;
 import co.com.anfega.r2dbc.helper.ReactiveAdapterOperations;
+import lombok.extern.slf4j.Slf4j;
 import org.reactivecommons.utils.ObjectMapper;
 import org.springframework.stereotype.Repository;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.ArrayList;
@@ -17,6 +19,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Repository
+@Slf4j
 public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         Ability,
         AbilityEntity,
@@ -63,11 +66,19 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     }
 
     @Override
-    public Mono<PageResponse<Ability>> findAllPaginated(int page, int size, String sortBy, String direction) {
+    public Mono<PageResponse<Ability>> findAllPaginated(int page, int size, String sortBy, String direction, int totalElements) {
         return repository.findAll()
                 .map(this::toAbility)
                 .collectList()
-                .map(list -> paginateAndSortAbilities(list, page, size, sortBy, direction));
+                .map(list -> paginateAndSortAbilities(list, page, size, sortBy, direction, totalElements));
+    }
+
+    @Override
+    public Flux<Ability> findByNames(List<String> names) {
+        return repository.findByNameIn(names)
+                .map(this::toAbility)
+                .switchIfEmpty(Flux.empty())
+                .onErrorResume(e -> Flux.empty());
     }
 
     private Ability toAbility(AbilityEntity entity) {
@@ -80,11 +91,14 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
     }
 
     private PageResponse<Ability> paginateAndSortAbilities(
-            java.util.List<Ability> list, int page, int size, String sortBy, String direction) {
-        final String TECHNOLOGIES_COUNT = "technologiesCount";
+            List<Ability> list, int page, int size, String sortBy, String direction, int totalElements) {
+        if ("technologiesCount".equalsIgnoreCase(sortBy)) {
+            list = list.stream()
+                    .filter(a -> a.getTechnologies().size() == totalElements)
+                    .collect(Collectors.toCollection(ArrayList::new));
+            return PaginationHelper.paginateAndSort(list, page, size, direction, a -> a.getTechnologies().size());
+        }
         switch (sortBy == null ? "" : sortBy.toLowerCase()) {
-            case TECHNOLOGIES_COUNT:
-                return PaginationHelper.paginateAndSort(list, page, size, direction, a -> a.getTechnologies().size());
             case "name":
                 return PaginationHelper.paginateAndSort(list, page, size, direction, Ability::getName);
             case "description":
@@ -94,5 +108,10 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         }
     }
 
+    @Override
+    public Mono<Void> deleteByIds(List<Long> ids) {
+        return repository.deleteAllById(ids)
+                .onErrorResume(e -> Mono.error(new IllegalStateException("Error eliminando capacidades: " + e.getMessage())));
 
+    }
 }
