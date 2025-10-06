@@ -6,11 +6,12 @@ import co.com.anfega.model.common.PageResponse;
 import co.com.anfega.model.technology.Technology;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
@@ -24,7 +25,7 @@ class AbilityUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        abilityRepository = Mockito.mock(AbilityRepository.class);
+        abilityRepository = mock(AbilityRepository.class);
         abilityUseCase = new AbilityUseCase(abilityRepository);
     }
 
@@ -45,13 +46,11 @@ class AbilityUseCaseTest {
 
         when(abilityRepository.save(any(Ability.class))).thenReturn(Mono.just(ability));
 
-        Mono<Ability> result = abilityUseCase.save(ability);
-
-        StepVerifier.create(result)
+        StepVerifier.create(abilityUseCase.save(ability))
                 .expectNext(ability)
                 .verifyComplete();
 
-        verify(abilityRepository, times(1)).save(ability);
+        verify(abilityRepository).save(ability);
     }
 
     @Test
@@ -61,9 +60,7 @@ class AbilityUseCaseTest {
                 new Technology("Spring", "5.0")
         ));
 
-        Mono<Ability> result = abilityUseCase.save(ability);
-
-        StepVerifier.create(result)
+        StepVerifier.create(abilityUseCase.save(ability))
                 .expectErrorMatches(ex -> ex instanceof IllegalArgumentException &&
                         ex.getMessage().contains("al menos 3"))
                 .verify();
@@ -77,9 +74,7 @@ class AbilityUseCaseTest {
         IntStream.range(0, 21).forEach(i -> technologies.add(new Technology("Tech" + i, "1.0")));
         Ability ability = buildAbilityWithTechnologies(technologies);
 
-        Mono<Ability> result = abilityUseCase.save(ability);
-
-        StepVerifier.create(result)
+        StepVerifier.create(abilityUseCase.save(ability))
                 .expectErrorMatches(ex -> ex instanceof IllegalArgumentException &&
                         ex.getMessage().contains("más de 20"))
                 .verify();
@@ -92,18 +87,29 @@ class AbilityUseCaseTest {
         Ability ability = buildAbilityWithTechnologies(List.of(
                 new Technology("Java", "1.8"),
                 new Technology("Spring", "5.0"),
-                new Technology("java", "")
+                new Technology("java", "otra")
         ));
 
-        Mono<Ability> result = abilityUseCase.save(ability);
-
-        StepVerifier.create(result)
+        StepVerifier.create(abilityUseCase.save(ability))
                 .expectErrorMatches(ex -> ex instanceof IllegalArgumentException &&
                         ex.getMessage().contains("repetidas"))
                 .verify();
 
         verify(abilityRepository, never()).save(any());
     }
+
+    @Test
+    void save_shouldFail_whenTechnologiesIsNull() {
+        Ability ability = buildAbilityWithTechnologies(null);
+
+        StepVerifier.create(abilityUseCase.save(ability))
+                .expectErrorMatches(ex -> ex instanceof IllegalArgumentException &&
+                        ex.getMessage().contains("al menos 3"))
+                .verify();
+
+        verify(abilityRepository, never()).save(any());
+    }
+
 
     @Test
     void listAbilities_shouldReturnPage_whenRepositoryReturnsData() {
@@ -114,24 +120,20 @@ class AbilityUseCaseTest {
         ));
         PageResponse<Ability> response = new PageResponse<>(List.of(ability), 0, 10, 1);
 
-        when(abilityRepository.findAllPaginated(0, 10, "name", "asc"))
+        when(abilityRepository.findAllPaginated(0, 10, "name", "asc", 1))
                 .thenReturn(Mono.just(response));
 
-        Mono<PageResponse<Ability>> result = abilityUseCase.listAbilities(0, 10, "name", "asc");
-
-        StepVerifier.create(result)
+        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc", 1))
                 .expectNext(response)
                 .verifyComplete();
     }
 
     @Test
     void listAbilities_shouldReturnEmptyPage_whenRepositoryReturnsEmpty() {
-        when(abilityRepository.findAllPaginated(0, 10, "name", "asc"))
+        when(abilityRepository.findAllPaginated(0, 10, "name", "asc", 0))
                 .thenReturn(Mono.empty());
 
-        Mono<PageResponse<Ability>> result = abilityUseCase.listAbilities(0, 10, "name", "asc");
-
-        StepVerifier.create(result)
+        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc", 0))
                 .assertNext(page -> {
                     assert page.getContent().isEmpty();
                     assert page.getTotalElements() == 0;
@@ -140,5 +142,79 @@ class AbilityUseCaseTest {
                 })
                 .verifyComplete();
     }
-}
 
+    @Test
+    void listAbilities_shouldFail_whenRepositoryErrors() {
+        when(abilityRepository.findAllPaginated(0, 10, "name", "asc", 0))
+                .thenReturn(Mono.error(new RuntimeException("DB error")));
+
+        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc", 0))
+                .expectErrorMatches(ex -> ex instanceof RuntimeException &&
+                        ex.getMessage().equals("DB error"))
+                .verify();
+    }
+
+    @Test
+    void findByNames_shouldReturnAbilities_whenRepositoryReturnsData() {
+        Ability ability = buildAbilityWithTechnologies(List.of(
+                new Technology("Java", "1.8"),
+                new Technology("Spring", "5.0"),
+                new Technology("Docker", "19.03")
+        ));
+
+        when(abilityRepository.findByNames(List.of("Java", "Spring")))
+                .thenReturn(Flux.just(ability));
+
+        StepVerifier.create(abilityUseCase.findByNames(List.of("Java", "Spring")))
+                .expectNext(ability)
+                .verifyComplete();
+    }
+
+    @Test
+    void findByNames_shouldFail_whenRepositoryReturnsEmpty() {
+        when(abilityRepository.findByNames(List.of("NoExiste")))
+                .thenReturn(Flux.empty());
+
+        StepVerifier.create(abilityUseCase.findByNames(List.of("NoExiste")))
+                .expectErrorMatches(ex -> ex instanceof IllegalStateException &&
+                        ex.getMessage().contains("No hay capacidades registradas"))
+                .verify();
+    }
+
+    @Test
+    void findByNames_shouldFail_whenRepositoryErrors() {
+        when(abilityRepository.findByNames(any()))
+                .thenReturn(Flux.error(new RuntimeException("DB error")));
+
+        StepVerifier.create(abilityUseCase.findByNames(List.of("Java")))
+                .expectErrorMatches(ex -> ex instanceof RuntimeException &&
+                        ex.getMessage().equals("DB error"))
+                .verify();
+    }
+
+
+    @Test
+    void deleteByIds_shouldSucceed_whenRepositorySucceeds() {
+        List<Long> ids = Arrays.asList(1L, 2L);
+
+        when(abilityRepository.deleteByIds(ids)).thenReturn(Mono.empty());
+
+        StepVerifier.create(abilityUseCase.deleteByIds(ids))
+                .verifyComplete();
+
+        verify(abilityRepository).deleteByIds(ids);
+    }
+
+    @Test
+    void deleteByIds_shouldFail_whenRepositoryErrors() {
+        List<Long> ids = Arrays.asList(1L, 2L);
+
+        when(abilityRepository.deleteByIds(ids))
+                .thenReturn(Mono.error(new RuntimeException("DB error")));
+
+        StepVerifier.create(abilityUseCase.deleteByIds(ids))
+                .expectErrorMatches(ex -> ex instanceof RuntimeException &&
+                        ex.getMessage().equals("DB error"))
+                .verify();
+    }
+}
