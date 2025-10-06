@@ -57,7 +57,7 @@ public class Handler extends BaseHandler {
                 .flatMap(abilities -> ok(abilities.isEmpty() ? EMPTY_ABILITIES : ABILITIES_FOUND, abilities));
     }
 
-    public Mono<ServerResponse> listenDeleteAbilitiesByIds(ServerRequest request) {
+        public Mono<ServerResponse> listenDeleteAbilitiesByIds(ServerRequest request) {
         return bodyToMonoValidated(validator, request, DeleteAbilitiesDTO.class)
                 .map(DeleteAbilitiesDTO::getIds)
                 .flatMap(ids -> abilityService.deleteByIds(ids)
