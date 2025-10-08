@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class FindByNamesDTO {
+public class FindByIdsDTO {
     @NotEmpty(message = "La lista de nombres no puede estar vacía")
-    List<String> names;
+    List<Long> ids;
 }

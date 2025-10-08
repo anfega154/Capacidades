@@ -14,6 +14,4 @@ public class AbilityEntity {
     private String name;
     @Column("descripcion")
     private String description;
-    @Column("tecnologias")
-    private String technologies;
 }
