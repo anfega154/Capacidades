@@ -1,6 +1,5 @@
 server:
   port: 8089
-
 spring:
   application:
     name: "Capacidades"
@@ -12,17 +11,14 @@ spring:
       path: "/h2"
   profiles:
     include: null
-
   data:
     redis:
-      host: localhost
+      host: "localhost"
       port: 6379
-
   cache:
-    type: redis
+    type: "redis"
     redis:
-      time-to-live: 10m # Duración de la caché en Redis (10 minutos)
-
+      time-to-live: "10m"
 management:
   endpoints:
     web:
@@ -33,15 +29,15 @@ management:
       show-details: "always"
       probes:
         enabled: true
-
+  health:
+    circuitbreakers:
+      enabled: true
 cors:
   allowed-origins: "http://localhost:4200,http://localhost:8082"
-
 routers:
   paths:
     abilities: "/api/v1/capacidades"
     allAbilities: "/api/v1/capacidades/all"
-
 resilience4j:
   circuitbreaker:
     instances:
@@ -51,19 +47,27 @@ resilience4j:
         register-health-indicator: true
         sliding-window-size: 10
         failure-rate-threshold: 50
-        wait-duration-in-open-state: 5s
+        wait-duration-in-open-state: "5s"
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
-#adapters:
-#  r2dbc:
-#    host: "${SPRING_R2DBC_HOST:capacidades-db}"
-#    port: "${SPRING_R2DBC_PORT:5432}"
-#    database: "${SPRING_R2DBC_DATABASE:capacidades}"
-#    schema: "${SPRING_R2DBC_SCHEMA:public}"
-#    username: "${SPRING_R2DBC_USERNAME:postgres}"
-#    password: "${SPRING_R2DBC_PASSWORD:postgres}"
-
-# Config alternativo local
+      testGet:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"
+      testPost:
+        registerHealthIndicator: true
+        failureRateThreshold: 50
+        slowCallRateThreshold: 50
+        slowCallDurationThreshold: "2s"
+        permittedNumberOfCallsInHalfOpenState: 3
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 10
+        waitDurationInOpenState: "10s"
 adapters:
   r2dbc:
     host: "localhost"
@@ -72,3 +76,7 @@ adapters:
     schema: "public"
     username: "postgres"
     password: "postgres"
+adapter:
+  restconsumer:
+    timeout: 5000
+    url: "http://localhost:8080"

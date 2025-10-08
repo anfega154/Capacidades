@@ -4,7 +4,6 @@ import co.com.anfega.model.ability.Ability;
 import co.com.anfega.model.ability.gateways.AbilityRepository;
 import co.com.anfega.model.common.PageResponse;
 import co.com.anfega.model.common.PaginationHelper;
-import co.com.anfega.model.technology.Technology;
 import co.com.anfega.r2dbc.entity.AbilityEntity;
 import co.com.anfega.r2dbc.helper.ReactiveAdapterOperations;
 import lombok.extern.slf4j.Slf4j;
@@ -13,10 +12,7 @@ import org.springframework.stereotype.Repository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.*;
 
 @Repository
 @Slf4j
@@ -42,71 +38,65 @@ public class MyReactiveRepositoryAdapter extends ReactiveAdapterOperations<
         data.setName(ability.getName());
         data.setDescription(ability.getDescription());
 
-        if (ability.getTechnologies() != null && !ability.getTechnologies().isEmpty()) {
-            String technologiesCsv = ability.getTechnologies()
-                    .stream()
-                    .map(Technology::getName)
-                    .collect(Collectors.joining(","));
-            data.setTechnologies(technologiesCsv);
-        } else {
-            data.setTechnologies(null);
-        }
-
         return repository.save(data)
                 .map(savedData -> new Ability(
                         savedData.getId(),
                         savedData.getName(),
                         savedData.getDescription(),
-                        savedData.getTechnologies() != null && !savedData.getTechnologies().isEmpty()
-                                ? Arrays.stream(savedData.getTechnologies().split(","))
-                                .map(name -> new Technology(name, null))
-                                .toList()
-                                : new ArrayList<>()
+                        Collections.emptyList()
                 ));
     }
 
     @Override
-    public Mono<PageResponse<Ability>> findAllPaginated(int page, int size, String sortBy, String direction, int totalElements) {
+    public Mono<PageResponse<Ability>> findAllPaginated(int page, int size, String sortBy, String direction) {
         return repository.findAll()
                 .map(this::toAbility)
                 .collectList()
-                .map(list -> paginateAndSortAbilities(list, page, size, sortBy, direction, totalElements));
+                .map(list -> paginateAndSortAbilities(list, page, size, sortBy, direction));
     }
 
     @Override
-    public Flux<Ability> findByNames(List<String> names) {
-        return repository.findByNameIn(names)
+    public Flux<Ability> findByIds(List<Long> ids) {
+        return repository.findByIdIn(ids)
                 .map(this::toAbility)
                 .switchIfEmpty(Flux.empty())
                 .onErrorResume(e -> Flux.empty());
     }
 
     private Ability toAbility(AbilityEntity entity) {
-        List<Technology> technologies = (entity.getTechnologies() != null && !entity.getTechnologies().isEmpty())
-                ? Arrays.stream(entity.getTechnologies().split(","))
-                .map(name -> new Technology(name, name))
-                .toList()
-                : java.util.Collections.emptyList();
-        return new Ability(entity.getId(), entity.getName(), entity.getDescription(), technologies);
+        return new Ability(entity.getId(), entity.getName(), entity.getDescription(), new ArrayList<>());
     }
 
     private PageResponse<Ability> paginateAndSortAbilities(
-            List<Ability> list, int page, int size, String sortBy, String direction, int totalElements) {
-        if ("technologiesCount".equalsIgnoreCase(sortBy)) {
-            list = list.stream()
-                    .filter(a -> a.getTechnologies().size() == totalElements)
-                    .collect(Collectors.toCollection(ArrayList::new));
-            return PaginationHelper.paginateAndSort(list, page, size, direction, a -> a.getTechnologies().size());
+            List<Ability> list, int page, int size, String sortBy, String direction) {
+
+        if (sortBy == null) sortBy = "";
+        sortBy = sortBy.trim().toLowerCase();
+
+        if ("technologiescount".equals(sortBy)) {
+            List<Ability> copy = new ArrayList<>(list == null ? Collections.emptyList() : list);
+
+            Comparator<Ability> cmp = Comparator.comparingInt(
+                    a -> a.getTechnologies() == null ? 0 : a.getTechnologies().size()
+            );
+
+            if ("desc".equalsIgnoreCase(direction)) {
+                cmp = cmp.reversed();
+            }
+
+            copy.sort(cmp);
+            return PageResponse.of(copy, page, size);
         }
-        switch (sortBy == null ? "" : sortBy.toLowerCase()) {
-            case "name":
-                return PaginationHelper.paginateAndSort(list, page, size, direction, Ability::getName);
-            case "description":
-                return PaginationHelper.paginateAndSort(list, page, size, direction, Ability::getDescription);
-            default:
-                return PaginationHelper.paginateAndSort(list, page, size, direction, a -> String.valueOf(a.getId()));
-        }
+
+        return switch (sortBy) {
+            case "name" -> PaginationHelper.paginateAndSort(list, page, size, direction, Ability::getName);
+            case "description" ->
+                    PaginationHelper.paginateAndSort(list, page, size, direction, Ability::getDescription);
+            default -> PaginationHelper.paginateAndSort(list, page, size, direction,
+                    a -> a.getId() == null ? "" : String.valueOf(a.getId()));
+        };
     }
+
 
     @Override
     public Mono<Void> deleteByIds(List<Long> ids) {

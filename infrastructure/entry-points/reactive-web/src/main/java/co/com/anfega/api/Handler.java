@@ -2,7 +2,7 @@ package co.com.anfega.api;
 
 import co.com.anfega.api.dto.CreateAbilityDTO;
 import co.com.anfega.api.dto.DeleteAbilitiesDTO;
-import co.com.anfega.api.dto.FindByNamesDTO;
+import co.com.anfega.api.dto.FindByIdsDTO;
 import co.com.anfega.api.helper.api.BaseHandler;
 import co.com.anfega.api.mapper.AbilityDTOMapper;
 import co.com.anfega.api.service.AbilityService;
@@ -42,18 +42,17 @@ public class Handler extends BaseHandler {
     public Mono<ServerResponse> listenListAbilities(ServerRequest request) {
         int page = Integer.parseInt(request.queryParam("page").orElse("0"));
         int size = Integer.parseInt(request.queryParam("size").orElse("10"));
-        int totalElements = Integer.parseInt(request.queryParam("totalElements").orElse("0"));
         String sortBy = request.queryParam("sortBy").orElse("name");
         String direction = request.queryParam("direction").orElse("asc");
 
-        return abilityService.listAbilities(page, size, sortBy, direction, totalElements)
+        return abilityService.listAbilities(page, size, sortBy, direction)
                 .flatMap(abilities -> ok(abilities.isEmpty() ? EMPTY_ABILITIES : ABILITIES_FOUND, abilities));
     }
 
     public Mono<ServerResponse> listenAllAbilities(ServerRequest request) {
-        return bodyToMonoValidated(validator, request, FindByNamesDTO.class)
-                .map(FindByNamesDTO::getNames)
-                .flatMap(abilityService::findByNames)
+        return bodyToMonoValidated(validator, request, FindByIdsDTO.class)
+                .map(FindByIdsDTO::getIds)
+                .flatMap(abilityService::findByIds)
                 .flatMap(abilities -> ok(abilities.isEmpty() ? EMPTY_ABILITIES : ABILITIES_FOUND, abilities));
     }
 

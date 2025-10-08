@@ -1,7 +1,7 @@
 package co.com.anfega.api.service;
 
-import co.com.anfega.api.helper.client.ApiResponse;
-import co.com.anfega.api.helper.client.WebClientHelper;
+import co.com.anfega.consumer.client.WebClientHelper;
+import co.com.anfega.consumer.ApiResponse;
 import co.com.anfega.model.ability.Ability;
 import co.com.anfega.model.ability.gateways.AbilityInputPort;
 import co.com.anfega.model.technology.Technology;
@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -37,7 +38,7 @@ public class AbilityService {
                                         return inputTech;
                                     })
                                     .orElse(null))
-                            .filter(t -> t != null)
+                            .filter(Objects::nonNull)
                             .toList();
 
                     ability.setTechnologies(filteredTechnologies);
@@ -45,15 +46,15 @@ public class AbilityService {
                 });
     }
 
-    public Mono<List<Ability>> listAbilities(int page, int size, String sortBy, String direction, int totalElements) {
+    public Mono<List<Ability>> listAbilities(int page, int size, String sortBy, String direction) {
         return Mono.zip(
-                abilityInputPort.listAbilities(page, size, sortBy, direction, totalElements),
+                abilityInputPort.listAbilities(page, size, sortBy, direction),
                 getTechnologies()
         ).map(tuple -> enrichAbilities(tuple.getT1().getContent(), tuple.getT2()));
     }
 
-    public Mono<List<Ability>> findByNames(List<String> names) {
-        return abilityInputPort.findByNames(names)
+    public Mono<List<Ability>> findByIds(List<Long> ids) {
+        return abilityInputPort.findByIds(ids)
                 .collectList()
                 .zipWith(getTechnologies())
                 .map(tuple -> enrichAbilities(tuple.getT1(), tuple.getT2()));
@@ -63,10 +64,11 @@ public class AbilityService {
         abilities.forEach(ability -> {
             List<Technology> enriched = ability.getTechnologies().stream()
                     .map(tech -> technologies.stream()
-                            .filter(t -> t.getName().equalsIgnoreCase(tech.getName()))
+                            .filter(t -> t.getId().equals(tech.getId()))
                             .findFirst()
                             .map(match -> {
                                 tech.setId(match.getId());
+                                tech.setName(match.getName());
                                 tech.setDescription(match.getDescription());
                                 return tech;
                             })

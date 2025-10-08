@@ -2,6 +2,7 @@ package co.com.anfega.usecase.ability;
 
 import co.com.anfega.model.ability.Ability;
 import co.com.anfega.model.ability.gateways.AbilityRepository;
+import co.com.anfega.model.abilitytechnology.gateways.AbilityTechnologyRepository;
 import co.com.anfega.model.common.PageResponse;
 import co.com.anfega.model.technology.Technology;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,11 +23,13 @@ class AbilityUseCaseTest {
 
     private AbilityRepository abilityRepository;
     private AbilityUseCase abilityUseCase;
+    private AbilityTechnologyRepository abilityTechnologyRepository;
 
     @BeforeEach
     void setUp() {
         abilityRepository = mock(AbilityRepository.class);
-        abilityUseCase = new AbilityUseCase(abilityRepository);
+        abilityTechnologyRepository = mock(AbilityTechnologyRepository.class);
+        abilityUseCase = new AbilityUseCase(abilityRepository, abilityTechnologyRepository);
     }
 
     private Ability buildAbilityWithTechnologies(List<Technology> technologies) {
@@ -120,20 +123,20 @@ class AbilityUseCaseTest {
         ));
         PageResponse<Ability> response = new PageResponse<>(List.of(ability), 0, 10, 1);
 
-        when(abilityRepository.findAllPaginated(0, 10, "name", "asc", 1))
+        when(abilityRepository.findAllPaginated(0, 10, "name", "asc"))
                 .thenReturn(Mono.just(response));
 
-        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc", 1))
+        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc"))
                 .expectNext(response)
                 .verifyComplete();
     }
 
     @Test
     void listAbilities_shouldReturnEmptyPage_whenRepositoryReturnsEmpty() {
-        when(abilityRepository.findAllPaginated(0, 10, "name", "asc", 0))
+        when(abilityRepository.findAllPaginated(0, 10, "name", "asc"))
                 .thenReturn(Mono.empty());
 
-        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc", 0))
+        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc"))
                 .assertNext(page -> {
                     assert page.getContent().isEmpty();
                     assert page.getTotalElements() == 0;
@@ -145,10 +148,10 @@ class AbilityUseCaseTest {
 
     @Test
     void listAbilities_shouldFail_whenRepositoryErrors() {
-        when(abilityRepository.findAllPaginated(0, 10, "name", "asc", 0))
+        when(abilityRepository.findAllPaginated(0, 10, "name", "asc"))
                 .thenReturn(Mono.error(new RuntimeException("DB error")));
 
-        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc", 0))
+        StepVerifier.create(abilityUseCase.listAbilities(0, 10, "name", "asc"))
                 .expectErrorMatches(ex -> ex instanceof RuntimeException &&
                         ex.getMessage().equals("DB error"))
                 .verify();

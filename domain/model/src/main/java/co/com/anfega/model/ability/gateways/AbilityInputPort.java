@@ -13,9 +13,8 @@ public interface AbilityInputPort {
             int page,
             int size,
             String sortBy,
-            String direction,
-            int totalElements
+            String direction
     );
-    Flux<Ability> findByNames(List<String> names);
+    Flux<Ability> findByIds(List<Long> names);
     Mono<Void> deleteByIds(List<Long> ids);
 }
